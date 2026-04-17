@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createIncidentChannel } from "@/lib/graph"
+import { createIncidentChat } from "@/lib/graph"
 import { getClientPrincipal, getDisplayName } from "@/lib/auth"
 
 export type Severity = "P1" | "P2" | "P3" | "P4"
@@ -38,10 +38,10 @@ export async function POST(request: NextRequest) {
   const warRoomCreated = CHANNEL_SEVERITIES.includes(body.severity)
 
   try {
-    let channel = null
+    let chat = null
 
     if (warRoomCreated) {
-      channel = await createIncidentChannel({
+      chat = await createIncidentChat({
         incidentTitle: `${body.severity} - ${body.title.trim()}`,
         incidentDescription: [
           body.description.trim(),
@@ -56,19 +56,19 @@ export async function POST(request: NextRequest) {
       {
         severity: body.severity,
         warRoomCreated,
-        channel: channel
-          ? { id: channel.id, name: channel.displayName, url: channel.webUrl }
+        chat: chat
+          ? { id: chat.id, topic: chat.topic, url: chat.webUrl }
           : null,
         message: warRoomCreated
-          ? `War room channel created: ${channel?.displayName}`
+          ? `War room chat created: ${chat?.topic}`
           : `Incident logged. War rooms are created for P1/P2 only.`,
       },
       { status: 201 }
     )
   } catch (err) {
-    console.error("Failed to create incident channel:", err)
+    console.error("Failed to create incident chat:", err)
     return NextResponse.json(
-      { error: "Failed to create incident channel. Please try again." },
+      { error: "Failed to create incident chat. Please try again." },
       { status: 500 }
     )
   }

@@ -54,52 +54,61 @@ async function graphRequest<T>(
   return response.json()
 }
 
-export interface CreatedChannel {
+export interface CreatedChat {
   id: string
-  displayName: string
+  topic: string
   webUrl: string
 }
 
-export async function createIncidentChannel(params: {
+export async function createIncidentChat(params: {
   incidentTitle: string
   incidentDescription: string
   reporterUserId?: string
-}): Promise<CreatedChannel> {
-  const teamId = process.env.TEAMS_TEAM_ID
-  if (!teamId) {
-    throw new Error("TEAMS_TEAM_ID environment variable is not configured")
+}): Promise<CreatedChat> {
+  const oncallUserId = process.env.TEAMS_ONCALL_USER_ID
+  if (!oncallUserId) {
+    throw new Error("TEAMS_ONCALL_USER_ID environment variable is not configured")
   }
 
-  const channelName = `INC-${Date.now()}-${params.incidentTitle
-    .replace(/[^a-zA-Z0-9 ]/g, "")
-    .slice(0, 40)
-    .trim()}`
+  const topic = `INC - ${params.incidentTitle.slice(0, 60)}`
 
-  const channel = await graphRequest<CreatedChannel>(
-    `/teams/${teamId}/channels`,
-    "POST",
+  const members: unknown[] = [
     {
-      displayName: channelName,
-      description: params.incidentDescription,
-      membershipType: "private",
-    }
-  )
+      "@odata.type": "#microsoft.graph.aadUserConversationMember",
+      roles: ["owner"],
+      "user@odata.bind": `https://graph.microsoft.com/v1.0/users/${oncallUserId}`,
+    },
+  ]
 
-  if (params.reporterUserId) {
-    try {
-      await graphRequest(
-        `/teams/${teamId}/channels/${channel.id}/members`,
-        "POST",
-        {
-          "@odata.type": "#microsoft.graph.aadUserConversationMember",
-          roles: ["owner"],
-          "user@odata.bind": `https://graph.microsoft.com/v1.0/users/${params.reporterUserId}`,
-        }
-      )
-    } catch {
-      // Non-fatal — channel still created, member add failed
-    }
+  if (params.reporterUserId && params.reporterUserId !== oncallUserId) {
+    members.push({
+      "@odata.type": "#microsoft.graph.aadUserConversationMember",
+      roles: ["member"],
+      "user@odata.bind": `https://graph.microsoft.com/v1.0/users/${params.reporterUserId}`,
+    })
   }
 
-  return channel
+  const chat = await graphRequest<CreatedChat>("/chats", "POST", {
+    chatType: "group",
+    topic,
+    members,
+  })
+
+  // Post the incident details as the opening message
+  try {
+    await graphRequest(`/chats/${chat.id}/messages`, "POST", {
+      body: {
+        contentType: "text",
+        content: [
+          `🚨 ${params.incidentTitle}`,
+          "",
+          params.incidentDescription,
+        ].join("\n"),
+      },
+    })
+  } catch {
+    // Non-fatal — chat created, opening message failed
+  }
+
+  return chat
 }

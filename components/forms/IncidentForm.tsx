@@ -22,8 +22,8 @@ type State =
   | {
       status: "success"
       warRoomCreated: boolean
-      channelUrl?: string
-      channelName?: string
+      chatUrl?: string
+      chatTopic?: string
       message: string
     }
   | { status: "error"; message: string }
@@ -61,8 +61,8 @@ export function IncidentForm() {
       setState({
         status: "success",
         warRoomCreated: data.warRoomCreated,
-        channelUrl: data.channel?.url,
-        channelName: data.channel?.name,
+        chatUrl: data.chat?.url,
+        chatTopic: data.chat?.topic,
         message: data.message,
       })
     } catch (err) {
@@ -92,14 +92,14 @@ export function IncidentForm() {
         >
           {state.message}
         </p>
-        {state.channelUrl && (
+        {state.chatUrl && (
           <a
-            href={state.channelUrl}
+            href={state.chatUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block text-sm font-medium underline text-orange-800"
           >
-            Open war room: {state.channelName}
+            Open war room chat: {state.chatTopic}
           </a>
         )}
         <div>
@@ -148,7 +148,7 @@ export function IncidentForm() {
         </Select>
         {isHighSeverity && (
           <p className="text-xs text-orange-600">
-            A Teams war room channel will be created automatically for{" "}
+            A Teams war room group chat will be created automatically for{" "}
             {form.severity} incidents.
           </p>
         )}
