@@ -1,0 +1,37 @@
+{
+  "auth": {
+    "identityProviders": {
+      "azureActiveDirectory": {
+        "registration": {
+          "openIdIssuer": "https://login.microsoftonline.com/__TENANT_ID__/v2.0",
+          "clientIdSettingName": "AZURE_CLIENT_ID",
+          "clientSecretSettingName": "AZURE_CLIENT_SECRET"
+        }
+      }
+    }
+  },
+  "routes": [
+    {
+      "route": "/api/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/*",
+      "allowedRoles": ["authenticated"]
+    }
+  ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/aad",
+      "statusCode": 302
+    }
+  },
+  "globalHeaders": {
+    "X-Frame-Options": "SAMEORIGIN",
+    "X-XSS-Protection": "1; mode=block",
+    "X-Content-Type-Options": "nosniff"
+  },
+  "mimeTypes": {
+    ".json": "application/json"
+  }
+}
