@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils"
 const links = [
   { href: "/", label: "Home" },
   { href: "/request/feature", label: "Request a Feature" },
-  { href: "/request/incident", label: "Report an Incident" },
 ]
 
 export function Nav() {

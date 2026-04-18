@@ -1,4 +1,7 @@
 import axios from "axios"
+import https from "https"
+
+const httpsAgent = new https.Agent({ keepAlive: false })
 
 export type WorkItemType = "Feature" | "Bug" | "Task" | "User Story"
 
@@ -54,6 +57,7 @@ export async function createWorkItem(
       "Content-Type": "application/json-patch+json",
       Authorization: `Basic ${token}`,
     },
+    httpsAgent,
   })
 
   const data = response.data

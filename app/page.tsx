@@ -9,13 +9,6 @@ const cards = [
       "Have an idea or a need? Submit it to our delivery backlog on Azure DevOps. We'll review, prioritise, and get back to you.",
     hoverColor: "hover:border-blue-300",
   },
-  {
-    href: "/request/incident",
-    title: "Report an Incident",
-    description:
-      "Something broken or degraded? Raise an incident here. P1/P2 will automatically spin up a Teams war room.",
-    hoverColor: "hover:border-red-300",
-  },
 ];
 
 export default function HomePage() {

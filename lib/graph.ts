@@ -19,7 +19,7 @@ function getMsalClient(): ConfidentialClientApplication {
   return msalClient
 }
 
-async function getAccessToken(): Promise<string> {
+export async function getGraphToken(): Promise<string> {
   const client = getMsalClient()
   const result = await client.acquireTokenByClientCredential({
     scopes: ["https://graph.microsoft.com/.default"],
@@ -30,12 +30,12 @@ async function getAccessToken(): Promise<string> {
   return result.accessToken
 }
 
-async function graphRequest<T>(
+export async function graphRequest<T>(
   path: string,
   method: "GET" | "POST" | "PATCH" | "DELETE",
   body?: unknown
 ): Promise<T> {
-  const token = await getAccessToken()
+  const token = await getGraphToken()
   const response = await fetch(`https://graph.microsoft.com/v1.0${path}`, {
     method,
     headers: {
@@ -52,63 +52,4 @@ async function graphRequest<T>(
 
   if (response.status === 204) return undefined as T
   return response.json()
-}
-
-export interface CreatedChat {
-  id: string
-  topic: string
-  webUrl: string
-}
-
-export async function createIncidentChat(params: {
-  incidentTitle: string
-  incidentDescription: string
-  reporterUserId?: string
-}): Promise<CreatedChat> {
-  const oncallUserId = process.env.TEAMS_ONCALL_USER_ID
-  if (!oncallUserId) {
-    throw new Error("TEAMS_ONCALL_USER_ID environment variable is not configured")
-  }
-
-  const topic = `INC - ${params.incidentTitle.slice(0, 60)}`
-
-  const members: unknown[] = [
-    {
-      "@odata.type": "#microsoft.graph.aadUserConversationMember",
-      roles: ["owner"],
-      "user@odata.bind": `https://graph.microsoft.com/v1.0/users/${oncallUserId}`,
-    },
-  ]
-
-  if (params.reporterUserId && params.reporterUserId !== oncallUserId) {
-    members.push({
-      "@odata.type": "#microsoft.graph.aadUserConversationMember",
-      roles: ["member"],
-      "user@odata.bind": `https://graph.microsoft.com/v1.0/users/${params.reporterUserId}`,
-    })
-  }
-
-  const chat = await graphRequest<CreatedChat>("/chats", "POST", {
-    chatType: "group",
-    topic,
-    members,
-  })
-
-  // Post the incident details as the opening message
-  try {
-    await graphRequest(`/chats/${chat.id}/messages`, "POST", {
-      body: {
-        contentType: "text",
-        content: [
-          `🚨 ${params.incidentTitle}`,
-          "",
-          params.incidentDescription,
-        ].join("\n"),
-      },
-    })
-  } catch {
-    // Non-fatal — chat created, opening message failed
-  }
-
-  return chat
 }
