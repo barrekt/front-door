@@ -1,3 +1,5 @@
+import axios from "axios"
+
 export type WorkItemType = "Feature" | "Bug" | "Task" | "User Story"
 
 export interface CreateWorkItemParams {
@@ -31,16 +33,8 @@ export async function createWorkItem(
 
   const body = [
     { op: "add", path: "/fields/System.Title", value: params.title },
-    {
-      op: "add",
-      path: "/fields/System.Description",
-      value: params.description,
-    },
-    {
-      op: "add",
-      path: "/fields/Microsoft.VSTS.Common.Priority",
-      value: params.priority,
-    },
+    { op: "add", path: "/fields/System.Description", value: params.description },
+    { op: "add", path: "/fields/Microsoft.VSTS.Common.Priority", value: params.priority },
   ]
 
   if (params.tags) {
@@ -55,21 +49,14 @@ export async function createWorkItem(
     })
   }
 
-  const response = await fetch(apiUrl, {
-    method: "POST",
+  const response = await axios.post(apiUrl, body, {
     headers: {
       "Content-Type": "application/json-patch+json",
       Authorization: `Basic ${token}`,
     },
-    body: JSON.stringify(body),
   })
 
-  if (!response.ok) {
-    const text = await response.text()
-    throw new Error(`ADO API error ${response.status}: ${text}`)
-  }
-
-  const data = await response.json()
+  const data = response.data
   return {
     id: data.id,
     url: data.url,

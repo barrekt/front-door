@@ -40,9 +40,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(workItem, { status: 201 })
   } catch (err) {
-    console.error("Failed to create ADO work item:", err)
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("Failed to create ADO work item:", message)
     return NextResponse.json(
-      { error: "Failed to create work item. Please try again." },
+      {
+        error: "Failed to create work item. Please try again.",
+        ...(process.env.NODE_ENV === "development" && { detail: message }),
+      },
       { status: 500 }
     )
   }
